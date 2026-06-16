@@ -22,7 +22,7 @@ class ChatHistory:
     """
 
     def __init__(self):
-        self.client = MongoClient(MONGO_URI,tlsAllowInvalidCertificates=False)
+        self.client = MongoClient(MONGO_URI,tlsAllowInvalidCertificates=True)
         self.db = self.client[MONGO_DB]
         self.collection = self.db[MONGO_COLLECTION]
         self.collection.create_index("session_id",unique=True)
