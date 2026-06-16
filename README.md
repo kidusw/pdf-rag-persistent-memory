@@ -9,6 +9,7 @@ Upload one or more PDFs, then have a multi-turn conversation grounded in their c
 ## Tech Stack
 
 **Backend**
+
 - [FastAPI](https://fastapi.tiangolo.com/) — REST API server
 - [LangChain](https://python.langchain.com/) — RAG chain orchestration
 - [ChromaDB](https://www.trychroma.com/) — Local vector store for document embeddings
@@ -16,6 +17,7 @@ Upload one or more PDFs, then have a multi-turn conversation grounded in their c
 - [MongoDB](https://www.mongodb.com/) — Persistent chat history storage
 
 **Frontend**
+
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vitejs.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [React Router](https://reactrouter.com/) — Client-side routing
@@ -84,14 +86,14 @@ The frontend runs on `http://localhost:5173` and proxies API calls to `http://lo
 
 ## API Reference
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/upload-pdfs` | Upload and ingest one or more PDFs into ChromaDB |
-| `POST` | `/reindex` | Rebuild the vector store from all PDFs in `UPLOAD_DIR` |
-| `POST` | `/query/conversational` | Ask a question with conversation history |
-| `GET` | `/chat/all` | List all chat sessions |
-| `GET` | `/chat/{session_id}` | Load messages for a session |
-| `DELETE` | `/chat/{session_id}` | Delete a chat session |
+| Method   | Endpoint                | Description                                            |
+| -------- | ----------------------- | ------------------------------------------------------ |
+| `POST`   | `/upload-pdfs`          | Upload and ingest one or more PDFs into ChromaDB       |
+| `POST`   | `/reindex`              | Rebuild the vector store from all PDFs in `UPLOAD_DIR` |
+| `POST`   | `/query/conversational` | Ask a question with conversation history               |
+| `GET`    | `/chat/all`             | List all chat sessions                                 |
+| `GET`    | `/chat/{session_id}`    | Load messages for a session                            |
+| `DELETE` | `/chat/{session_id}`    | Delete a chat session                                  |
 
 ### Example: Upload and Query
 
