@@ -20,7 +20,7 @@
 | 0. Setup: branch, spec, plan | — | ✅ |
 | 1. Backend skeleton | 1 | ✅ |
 | 2. Chat storage | 2, 3 | ✅ |
-| 3. Ingestion into Qdrant | 4, 5 | ⬜ |
+| 3. Ingestion into Qdrant | 4, 5 | ✅ |
 | 4. RAG chain and streaming | 6, 7 | ⬜ |
 | 5. Compose (backend services) and old-backend removal | 8 | ⬜ |
 | 6. Frontend cleanup and API layer | 9, 10 | ⬜ |
@@ -279,7 +279,7 @@ async def test_list_omits_messages(client):
 5. `client.delete(collection, Filter(must=[FieldCondition(key="metadata.filename", match=MatchValue(value=filename))]))`
 6. `vector_store.add_documents(chunks)`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```python
 # test_vectorstore.py
@@ -312,10 +312,10 @@ def test_collection_is_empty(qdrant, settings, make_pdf, vector_store):
     assert not collection_is_empty(qdrant, settings.qdrant_collection)
 ```
 
-- [ ] **Step 2: Run, verify FAIL.** Run: `uv run pytest tests/test_vectorstore.py tests/test_ingest.py -v`.
-- [ ] **Step 3: Implement `vectorstore.py` and `ingest.py`.**
-- [ ] **Step 4: Run, verify PASS.** Run: `uv run pytest -v`.
-- [ ] **Step 5: Commit**: `git commit -m "Add Qdrant collection setup and PDF ingestion"`.
+- [x] **Step 2: Run, verify FAIL.** Run: `uv run pytest tests/test_vectorstore.py tests/test_ingest.py -v`.
+- [x] **Step 3: Implement `vectorstore.py` and `ingest.py`.**
+- [x] **Step 4: Run, verify PASS.** Run: `uv run pytest -v`.
+- [x] **Step 5: Commit**: `git commit -m "Add Qdrant collection setup and PDF ingestion"`.
 
 ### Task 5: Document endpoints
 
@@ -337,7 +337,7 @@ Per file:
 - Call `ingest_pdf` in a thread (`run_in_threadpool`).
 - Any exception from ingestion (`EmptyDocumentError`, pypdf errors) goes into `errors` with `str(e)` or `"No extractable text"`.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```python
 async def test_upload_and_list(client, make_pdf):
@@ -379,10 +379,10 @@ async def test_filename_sanitized_and_case_insensitive(client, make_pdf, setting
     assert not (Path(settings.upload_dir).parent.parent / "Q3 Report ü.PDF").exists()
 ```
 
-- [ ] **Step 2: Run, verify FAIL.**
-- [ ] **Step 3: Implement `api/documents.py`** and register it.
-- [ ] **Step 4: Run, verify PASS.** Run: `uv run pytest -v && uv run ruff check .`.
-- [ ] **Step 5: Commit**: `git commit -m "Add document upload and listing endpoints"`. Then update Progress and stop for review.
+- [x] **Step 2: Run, verify FAIL.**
+- [x] **Step 3: Implement `api/documents.py`** and register it.
+- [x] **Step 4: Run, verify PASS.** Run: `uv run pytest -v && uv run ruff check .`.
+- [x] **Step 5: Commit**: `git commit -m "Add document upload and listing endpoints"`. Then update Progress and stop for review.
 
 ---
 
