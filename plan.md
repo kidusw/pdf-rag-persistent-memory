@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Restructure the app into `backend/` + `frontend/`, replace Chroma with Qdrant, add SSE streaming and a light UI refresh, and run everything with one `docker compose up`.
+**Goal:** Restructure the app into `backend/` + `frontend/`, replace Chroma with Qdrant, add SSE strea ming and a light UI refresh, and run everything with one `docker compose up`.
 
 **Architecture:** A FastAPI backend (`backend/app/{api,rag,storage}`) with a typed `Settings` and a `Services` container injected through `app.state`, so tests swap in an in-memory Qdrant, fake LLM and embeddings, and an in-memory chat repo. A React frontend talks only to relative `/api/...`; nginx serves it and proxies `/api` to the backend. Compose runs `frontend`, `backend`, `qdrant` and `mongo`.
 
@@ -24,9 +24,11 @@
 | 4. RAG chain and streaming | 6, 7 | ✅ |
 | 5. Compose (backend services) and old-backend removal | 8 | ✅ |
 | 6. Frontend cleanup and API layer | 9, 10 | ✅ |
-| 7. Frontend features and refresh | 11, 12 | ⬜ |
+| 7. Frontend features and refresh | 11, 12 | 🟡 Task 11 done; Task 12 code done, live check pending |
 | 8. Frontend container, full stack | 13 | ⬜ |
 | 9. Docs | 14 | ⬜ |
+
+> **Resume here (2026-10-28):** Task 12 is implemented and committed, plus two bugs found by the browser checklist: (1) a first question sent from Home was wiped by a history reload under React StrictMode — fixed in `useChatStream` with a regression test; (2) the rewrite step answered long requests ("write an essay…") instead of rephrasing them (17 s to first token) — rewrite is now capped at 128 tokens, the prompt is stricter, and over-long rewrites fall back to the original question. **Remaining for Task 12:** rebuild the backend (`docker compose up -d --build backend`), confirm a follow-up essay request now streams within ~2–3 s, re-run the browser checklist (Tasks 11 + 12 items), then mark Phase 7 ✅. Then Phases 8–9.
 
 **Checkpoint rule:** at the end of each phase, run its verification, commit, update this table, and **stop for the user's review** before starting the next phase.
 
@@ -682,7 +684,7 @@ test("streamMessage maps error event and throws ApiError on 409", async () => {
     - Trash button with a `window.confirm`; it calls `deleteChat`, then `removeChat`, and navigates to `/` if the chat was active.
     - Collapses on desktop and becomes a drawer below `md` (hamburger in the top bar).
 
-- [ ] **Step 1: Write the failing hook test** (Review Focus 5)
+- [x] **Step 1: Write the failing hook test** (Review Focus 5)
 
 ```tsx
 test("switching chatId aborts the in-flight stream and drops its tokens", async () => {
@@ -697,10 +699,10 @@ test("switching chatId aborts the in-flight stream and drops its tokens", async 
 });
 ```
 
-- [ ] **Step 2: Run, verify FAIL.** Run: `npm test`.
-- [ ] **Step 3: Implement `useChatStream`.** Run: `npm test`. Expected: PASS.
-- [ ] **Step 4: Implement the components, `ChatPage` and the Sidebar refresh.**
-- [ ] **Step 5: Verify**
+- [x] **Step 2: Run, verify FAIL.** Run: `npm test`.
+- [x] **Step 3: Implement `useChatStream`.** Run: `npm test`. Expected: PASS.
+- [x] **Step 4: Implement the components, `ChatPage` and the Sidebar refresh.**
+- [x] **Step 5: Verify**
 
 Run: `npm run build && npm run lint && npm test`. Then, with the Task 8 compose backend running, run `npm run dev` and go through this checklist:
 - Open an existing chat and see its history.
@@ -711,7 +713,7 @@ Run: `npm run build && npm run lint && npm test`. Then, with the Task 8 compose 
 - At phone width, the drawer opens and closes.
 - Dark mode follows the OS setting.
 
-- [ ] **Step 6: Commit**: `git commit -m "Add streaming chat UI with sources and sidebar refresh"`.
+- [x] **Step 6: Commit**: `git commit -m "Add streaming chat UI with sources and sidebar refresh"`.
 
 ### Task 12: Home page, uploads, document list
 
@@ -730,7 +732,7 @@ Run: `npm run build && npm run lint && npm test`. Then, with the Task 8 compose 
   - On send: `createChat()`, then `addChat`, then `navigate(`/chat/${id}`, {state: {initialMessage}})`.
 - `ChatPage`: the paperclip opens `UploadPanel` in a modal (closed with Esc or a backdrop click).
 
-- [ ] **Step 1: Implement the store, `UploadPanel`, `DocumentList` and `HomePage`,** plus the modal on `ChatPage`.
+- [x] **Step 1: Implement the store, `UploadPanel`, `DocumentList` and `HomePage`,** plus the modal on `ChatPage`.
 - [ ] **Step 2: Verify**
 
 Run: `npm run build && npm run lint && npm test`. Then, with `npm run dev` against the compose backend:

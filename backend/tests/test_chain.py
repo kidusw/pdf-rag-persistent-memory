@@ -43,3 +43,43 @@ def test_format_context_and_history():
     history = to_lc_history([new_message("user", "q"), new_message("assistant", "a")])
     assert [type(m) for m in history] == [HumanMessage, AIMessage]
     assert [m.content for m in history] == ["q", "a"]
+
+
+async def test_rewrite_is_capped_and_falls_back_when_it_answers(
+    fake_llm, vector_store, make_pdf, qdrant, settings, monkeypatch
+):
+    # Seen live: for "write a long essay ..." the rewrite step wrote the essay (12 s, 6k chars).
+    ingest_pdf(make_pdf(["cats purr"]), "c.pdf", vector_store, qdrant, settings)
+    llm = fake_llm("### An essay\n" + "Cats purr. " * 200)
+    queries = []
+    original = vector_store.asimilarity_search
+
+    async def spy(query, k=4, **kw):
+        queries.append(query)
+        return await original(query, k=k, **kw)
+
+    monkeypatch.setattr(vector_store, "asimilarity_search", spy)
+    await RagChain(llm, vector_store, k=4).retrieve(
+        "write a long essay about cats", [HumanMessage("cats"), AIMessage("ok")]
+    )
+    assert queries == ["write a long essay about cats"]
+    assert llm.call_kwargs[0].get("max_tokens") == 128
+
+
+async def test_rewrite_used_when_it_is_a_short_question(
+    fake_llm, vector_store, make_pdf, qdrant, settings, monkeypatch
+):
+    ingest_pdf(make_pdf(["cats purr"]), "c.pdf", vector_store, qdrant, settings)
+    llm = fake_llm("  Do cats purr?  ")
+    queries = []
+    original = vector_store.asimilarity_search
+
+    async def spy(query, k=4, **kw):
+        queries.append(query)
+        return await original(query, k=k, **kw)
+
+    monkeypatch.setattr(vector_store, "asimilarity_search", spy)
+    await RagChain(llm, vector_store, k=4).retrieve(
+        "do they?", [HumanMessage("cats"), AIMessage("ok")]
+    )
+    assert queries == ["Do cats purr?"]

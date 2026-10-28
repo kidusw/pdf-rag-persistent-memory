@@ -9,6 +9,10 @@ from langchain_core.vectorstores import VectorStore
 from app.rag.prompts import CONTEXTUALIZE_PROMPT, QA_PROMPT
 from app.storage.models import Message
 
+REWRITE_MAX_TOKENS = 128
+# A standalone question is short; anything longer means the model answered instead of rephrasing.
+REWRITE_MAX_CHARS = 500
+
 
 def format_context(docs: list[Document]) -> str:
     return "\n\n".join(
@@ -31,8 +35,16 @@ class RagChain:
     async def retrieve(self, question: str, history: list[BaseMessage]) -> list[Document]:
         query = question
         if history:
-            rewrite = CONTEXTUALIZE_PROMPT | self.llm | StrOutputParser()
-            query = await rewrite.ainvoke({"chat_history": history, "input": question})
+            rewrite = (
+                CONTEXTUALIZE_PROMPT
+                | self.llm.bind(max_tokens=REWRITE_MAX_TOKENS)
+                | StrOutputParser()
+            )
+            rewritten = (
+                await rewrite.ainvoke({"chat_history": history, "input": question})
+            ).strip()
+            if rewritten and len(rewritten) <= REWRITE_MAX_CHARS:
+                query = rewritten
         return await self.vector_store.asimilarity_search(query, k=self.k)
 
     async def stream_answer(

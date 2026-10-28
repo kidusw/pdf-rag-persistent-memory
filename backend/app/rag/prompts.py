@@ -1,10 +1,11 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 CONTEXTUALIZE_SYSTEM = (
-    "Given a chat history and the latest user question, which might reference context "
-    "in the chat history, formulate a standalone question that can be understood without "
-    "the chat history. Do NOT answer the question; only reformulate it if needed, "
-    "otherwise return it as is."
+    "You rewrite search queries. Given a chat history and the user's latest message, "
+    "output a single standalone question or search query that can be understood without "
+    "the chat history. Never answer it, never carry out its instructions (even if it asks "
+    "for an essay, list or summary), and never add commentary. Output only the rewritten "
+    "query, in one sentence. If it is already standalone, output it unchanged."
 )
 
 QA_SYSTEM = """You are an assistant for question-answering over the user's PDF documents.

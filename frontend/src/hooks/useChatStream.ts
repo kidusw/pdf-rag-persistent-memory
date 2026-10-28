@@ -41,20 +41,21 @@ export function useChatStream(chatId: string) {
   const requestRef = useRef(0);
   const chatIdRef = useRef(chatId);
   const mountedRef = useRef(false);
+  const sentForRef = useRef<string | null>(null);
   const touchChat = useChatStore((s) => s.touchChat);
 
   useEffect(() => {
     chatIdRef.current = chatId;
     mountedRef.current = true;
-    const requestAtLoad = requestRef.current;
     let cancelled = false;
 
     getChat(chatId)
       .then((chat) => {
         if (cancelled) return;
         setState((s) =>
-          // A send() that started while loading owns the message list; don't clobber it.
-          s.chatId === chatId && requestRef.current !== requestAtLoad
+          // Once a send() has started for this chat it owns the message list; don't clobber it.
+          // (A per-load snapshot isn't enough: StrictMode re-runs this effect after the first send.)
+          s.chatId === chatId && sentForRef.current === chatId
             ? { ...s, loading: false }
             : { ...initialState(chatId), messages: chat.messages, loading: false },
         );
@@ -85,6 +86,7 @@ export function useChatStream(chatId: string) {
       controllerRef.current = controller;
       const req = ++requestRef.current;
       const sendChatId = chatId;
+      sentForRef.current = chatId;
       const live = () => requestRef.current === req && chatIdRef.current === sendChatId;
       const assistantId = `local-assistant-${req}`;
 

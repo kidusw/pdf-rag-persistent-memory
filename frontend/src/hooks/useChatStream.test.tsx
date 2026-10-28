@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { useEffect, useRef } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 
 import type { StreamEvent } from "../api/sse";
@@ -72,6 +73,41 @@ test("error event surfaces error and retry resends without duplicating the user 
     ["user", "hi"],
     ["assistant", "ok"],
   ]);
+});
+
+test("a send started before the chat finishes loading survives StrictMode remount", async () => {
+  // Reproduces the home → chat flow: the first question is sent on mount, before getChat resolves.
+  const { getChat } = await import("../api/client");
+  let releaseLoad = () => {};
+  vi.mocked(getChat).mockImplementation(async (id: string) => {
+    await new Promise<void>((r) => (releaseLoad = r));
+    return { id, title: "", created_at: "", updated_at: "", messages: [] };
+  });
+  h.script = ["wait", { type: "token", text: "Seven" }, { type: "done", messageId: "m1" }];
+
+  // Like ChatPage: the initial message is sent from an effect in the same mount pass.
+  const { result } = renderHook(
+    () => {
+      const chat = useChatStream("a");
+      const sent = useRef(false);
+      const { send } = chat;
+      useEffect(() => {
+        if (sent.current) return;
+        sent.current = true;
+        void send("how many?");
+      }, [send]);
+      return chat;
+    },
+    { reactStrictMode: true },
+  );
+  await act(async () => releaseLoad()); // server history (empty) arrives mid-stream
+  await act(async () => h.release());
+  await waitFor(() => expect(result.current.isStreaming).toBe(false));
+  expect(result.current.messages.map((m) => [m.role, m.content])).toEqual([
+    ["user", "how many?"],
+    ["assistant", "Seven"],
+  ]);
+  vi.mocked(getChat).mockReset();
 });
 
 test("switching chatId aborts the in-flight stream and drops its tokens", async () => {

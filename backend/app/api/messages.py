@@ -35,9 +35,7 @@ async def post_message(
     if chat is None:
         raise HTTPException(status_code=404, detail="Chat not found")
     if collection_is_empty(services.qdrant, settings.qdrant_collection):
-        raise HTTPException(
-            status_code=409, detail="No documents indexed yet. Upload a PDF first."
-        )
+        raise HTTPException(status_code=409, detail="No documents indexed yet. Upload a PDF first.")
 
     content = body.content
     chain = services.rag_chain

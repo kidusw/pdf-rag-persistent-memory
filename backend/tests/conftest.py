@@ -69,9 +69,11 @@ class RecordingFakeLLM(GenericFakeChatModel):
     """Fake chat model that streams word by word and records every prompt it receives."""
 
     calls: list[list[BaseMessage]] = Field(default_factory=list)
+    call_kwargs: list[dict[str, Any]] = Field(default_factory=list)
 
     def _generate(self, messages, *args: Any, **kwargs: Any):
         self.calls.append(messages)
+        self.call_kwargs.append(kwargs)
         return super()._generate(messages, *args, **kwargs)
 
     def _stream(self, messages, *args: Any, **kwargs: Any):
