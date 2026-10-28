@@ -5,7 +5,6 @@ description = "FastAPI backend for PDF RAG chat"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.162.0",
-    "langchain-community>=0.4.2",
     "langchain-core>=1.7.0",
     "langchain-openai>=1.7.3",
     "langchain-qdrant>=1.1.0",
@@ -37,6 +36,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = ["integration: needs running Mongo"]
 addopts = "-m 'not integration'"
+filterwarnings = ["ignore:Payload indexes have no effect in the local Qdrant:UserWarning"]
 
 [tool.ruff]
 line-length = 100
