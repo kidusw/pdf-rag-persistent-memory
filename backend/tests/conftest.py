@@ -14,6 +14,7 @@ from reportlab.pdfgen import canvas
 from app.config import Settings
 from app.main import create_app
 from app.rag.chain import RagChain
+from app.rag.ingest import ingest_pdf
 from app.rag.vectorstore import ensure_collection, make_vector_store
 from app.services import Services
 from app.storage.chats import InMemoryChatRepository
@@ -102,3 +103,8 @@ async def client(settings, services):
     app = create_app(settings, services=services)
     async with AsyncClient(transport=ASGITransport(app), base_url="http://test") as c:
         yield c
+
+
+@pytest.fixture
+def upload_sample(make_pdf, vector_store, qdrant, settings):
+    ingest_pdf(make_pdf(["cats purr"]), "c.pdf", vector_store, qdrant, settings)

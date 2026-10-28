@@ -21,7 +21,7 @@
 | 1. Backend skeleton | 1 | ✅ |
 | 2. Chat storage | 2, 3 | ✅ |
 | 3. Ingestion into Qdrant | 4, 5 | ✅ |
-| 4. RAG chain and streaming | 6, 7 | ⬜ |
+| 4. RAG chain and streaming | 6, 7 | ✅ |
 | 5. Compose (backend services) and old-backend removal | 8 | ⬜ |
 | 6. Frontend cleanup and API layer | 9, 10 | ⬜ |
 | 7. Frontend features and refresh | 11, 12 | ⬜ |
@@ -406,7 +406,7 @@ async def test_filename_sanitized_and_case_insensitive(client, make_pdf, setting
   - `services.rag_chain` is set to a `RagChain` in the conftest `services` fixture.
 - Produces the conftest fixture `RecordingFakeLLM`: a `GenericFakeChatModel` subclass that records each prompt's message list in `self.calls`. The fixture `fake_llm(*responses: str)` builds one over `iter([AIMessage(r) for r in responses])`.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```python
 async def test_no_history_skips_rewrite(fake_llm, vector_store, make_pdf, qdrant, settings):
@@ -429,10 +429,10 @@ async def test_stream_answer_yields_tokens_with_context(fake_llm, vector_store):
     assert "[c.pdf p.2]" in llm.calls[0][0].content
 ```
 
-- [ ] **Step 2: Run, verify FAIL.**
-- [ ] **Step 3: Implement `prompts.py` and `chain.py`.**
-- [ ] **Step 4: Run, verify PASS.**
-- [ ] **Step 5: Commit**: `git commit -m "Add history-aware RAG chain with streaming"`.
+- [x] **Step 2: Run, verify FAIL.**
+- [x] **Step 3: Implement `prompts.py` and `chain.py`.**
+- [x] **Step 4: Run, verify PASS.**
+- [x] **Step 5: Commit**: `git commit -m "Add history-aware RAG chain with streaming"`.
 
 ### Task 7: Streaming messages endpoint
 
@@ -458,7 +458,7 @@ Generator flow:
 5. On `Exception`, yield `error` with `{"detail": str(e)}`.
 6. In `finally`, `await asyncio.shield(repo.append_messages(chat_id, [user_msg] + ([assistant_msg] if answer else []), title_if_empty=content))`. `assistant_id` is generated up front so `done` and the saved message agree.
 
-- [ ] **Step 1: Write failing tests** (the fixture lets tests set `services.rag_chain.llm`, or pass in a new `RagChain` with a chosen fake)
+- [x] **Step 1: Write failing tests** (the fixture lets tests set `services.rag_chain.llm`, or pass in a new `RagChain` with a chosen fake)
 
 ```python
 async def test_stream_order_and_persistence(client, services, upload_sample):
@@ -497,10 +497,10 @@ The test helpers live in conftest:
 - `upload_sample` ingests `make_pdf(["cats purr"])` as `c.pdf`.
 - `FailingAfterFirstTokenLLM` streams one chunk, then raises `RuntimeError("rate limited")`.
 
-- [ ] **Step 2: Run, verify FAIL.**
-- [ ] **Step 3: Implement `sse.py` and `messages.py`.**
-- [ ] **Step 4: Run, verify PASS.** Run: `uv run pytest -v && uv run ruff check .`.
-- [ ] **Step 5: Commit**: `git commit -m "Add SSE streaming messages endpoint"`. Then update Progress and stop for review.
+- [x] **Step 2: Run, verify FAIL.**
+- [x] **Step 3: Implement `sse.py` and `messages.py`.**
+- [x] **Step 4: Run, verify PASS.** Run: `uv run pytest -v && uv run ruff check .`.
+- [x] **Step 5: Commit**: `git commit -m "Add SSE streaming messages endpoint"`. Then update Progress and stop for review.
 
 ---
 
