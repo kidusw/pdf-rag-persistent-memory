@@ -1,13 +1,19 @@
+import itertools
 from pathlib import Path
+from typing import Any
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from langchain_core.embeddings import DeterministicFakeEmbedding
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from langchain_core.messages import AIMessage, BaseMessage
+from pydantic import Field
 from qdrant_client import QdrantClient
 from reportlab.pdfgen import canvas
 
 from app.config import Settings
 from app.main import create_app
+from app.rag.chain import RagChain
 from app.rag.vectorstore import ensure_collection, make_vector_store
 from app.services import Services
 from app.storage.chats import InMemoryChatRepository
@@ -58,10 +64,36 @@ def make_pdf(tmp_path):
     return _make
 
 
+class RecordingFakeLLM(GenericFakeChatModel):
+    """Fake chat model that streams word by word and records every prompt it receives."""
+
+    calls: list[list[BaseMessage]] = Field(default_factory=list)
+
+    def _generate(self, messages, *args: Any, **kwargs: Any):
+        self.calls.append(messages)
+        return super()._generate(messages, *args, **kwargs)
+
+    def _stream(self, messages, *args: Any, **kwargs: Any):
+        self.calls.append(messages)
+        yield from super()._stream(messages, *args, **kwargs)
+
+
 @pytest.fixture
-def services(qdrant, vector_store) -> Services:
+def fake_llm():
+    def _make(*responses: str) -> RecordingFakeLLM:
+        return RecordingFakeLLM(messages=iter([AIMessage(r) for r in responses]))
+
+    return _make
+
+
+@pytest.fixture
+def services(qdrant, vector_store, settings) -> Services:
+    llm = RecordingFakeLLM(messages=itertools.cycle([AIMessage("Cats purr loudly.")]))
     return Services(
-        chat_repo=InMemoryChatRepository(), qdrant=qdrant, vector_store=vector_store, rag_chain=None
+        chat_repo=InMemoryChatRepository(),
+        qdrant=qdrant,
+        vector_store=vector_store,
+        rag_chain=RagChain(llm, vector_store, k=settings.retrieval_k),
     )
 
 
