@@ -136,6 +136,8 @@ docs/superpowers/specs/2026-10-28-modernize-design.md
 | `CHUNK_OVERLAP` | `200` | |
 | `RETRIEVAL_K` | `4` | |
 | `HISTORY_WINDOW` | `10` | Messages passed to the rewrite and answer steps |
+| `MAX_UPLOAD_MB` | `10` | Per-file PDF size limit |
+| `EMBEDDING_DIM` | `1536` | Vector size for the Qdrant collection |
 
 The defaults point at `localhost` so the backend can also run outside Docker against containerized Qdrant and Mongo.
 
@@ -156,7 +158,7 @@ The defaults point at `localhost` so the backend can also run outside Docker aga
 
 `list_documents(client, collection) -> list[DocumentInfo(filename, chunks)]` scrolls the payloads and groups them by filename.
 
-The upload endpoint sanitizes the file name (`pathlib.Path(name).name`, PDF extension required) before writing it to `UPLOAD_DIR`.
+The upload endpoint sanitizes the file name (`pathlib.Path(name).name`, PDF extension required) before writing it to `UPLOAD_DIR`. Files over `MAX_UPLOAD_MB` (10 MB) are rejected per file with `"File exceeds 10 MB limit"`; nginx allows 50 MB per request so multi-file uploads still work, and the frontend dropzone rejects oversized files before uploading.
 
 ### 4.4 RAG chain (`rag/chain.py`)
 The chain is built from three explicit steps:

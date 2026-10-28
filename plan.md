@@ -35,7 +35,7 @@
 - All work is on branch `modernize`. Every commit message ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Python 3.12. Dependencies are managed with `uv` in `backend/pyproject.toml`; `backend/uv.lock` is committed.
 - All HTTP routes live under the `/api` prefix.
-- Settings defaults (spec §4.1): `openai_model="gpt-4o-mini"`, `embedding_model="text-embedding-3-small"`, `qdrant_url="http://localhost:6333"`, `qdrant_collection="documents"`, `mongo_uri="mongodb://localhost:27017"`, `mongo_db="pdf_rag"`, `upload_dir="./data/uploads"`, `chunk_size=1000`, `chunk_overlap=200`, `retrieval_k=4`, `history_window=10`. `openai_api_key` is required.
+- Settings defaults (spec §4.1): `openai_model="gpt-4o-mini"`, `embedding_model="text-embedding-3-small"`, `qdrant_url="http://localhost:6333"`, `qdrant_collection="documents"`, `mongo_uri="mongodb://localhost:27017"`, `mongo_db="pdf_rag"`, `upload_dir="./data/uploads"`, `chunk_size=1000`, `chunk_overlap=200`, `retrieval_k=4`, `history_window=10`, `max_upload_mb=10`. `openai_api_key` is required.
 - **Plan-level additions to the spec:**
   - `embedding_dim: int = 1536`, so the collection can be created without a probe API call.
   - SSE is written by hand with Starlette's `StreamingResponse` instead of `sse-starlette`, avoiding that library's event-loop quirks in tests.
@@ -44,10 +44,11 @@
 - Chunk metadata is exactly `{"filename": str, "page": int}`, with pages counted from 1.
 - The frontend uses only relative `/api/...` URLs. No `localhost` strings in `frontend/src`.
 - Only port **8080** is published to the host in the final compose file.
+- PDF size limit: **10 MB per file** (`max_upload_mb`), enforced by the backend and mirrored in the dropzone; nginx allows 50 MB per request so multi-file uploads work.
 
 ## Review Focus
 
-1. **PDFs over 1 MB through nginx.** nginx's default `client_max_body_size` (1m) returns 413. Expected: a 2 MB upload reaches the backend. Pinned by the smoke script in Task 13.
+1. **Large PDFs through nginx.** nginx's default `client_max_body_size` (1m) returns 413. Expected: an upload up to 10 MB reaches the backend; a file over 10 MB is reported in `errors` as `"File exceeds 10 MB limit"`, not a 413 or 500. Pinned in Task 5 and by the smoke script in Task 13.
 2. **A corrupt or non-text file named `.pdf`.** Expected: it appears in `errors` while other files in the same request are still ingested, with no 500. Pinned in Task 5.
 3. **File names with path parts, spaces, Unicode, or `.PDF`** (for example `../../evil.pdf`, `Q3 Report ü.PDF`). Expected: saved as the base name inside `UPLOAD_DIR` and accepted case-insensitively. Pinned in Task 5.
 4. **The LLM fails mid-stream** (rate limit, bad key). Expected: an `error` event, with the user message and the partial assistant text persisted, and the chat still usable afterwards. Pinned in Task 7.
@@ -331,6 +332,7 @@ def test_collection_is_empty(qdrant, settings, make_pdf, vector_store):
 
 Per file:
 - `safe = Path(upload.filename).name`; skip it with an error if it doesn't end in `.pdf` (case-insensitive).
+- Stream the upload to disk in 1 MB chunks; if it exceeds `settings.max_upload_mb * 1024 * 1024` bytes, delete the partial file and add the error `f"File exceeds {settings.max_upload_mb} MB limit"`.
 - Write it to `Path(settings.upload_dir) / safe`, creating the directory if needed.
 - Call `ingest_pdf` in a thread (`run_in_threadpool`).
 - Any exception from ingestion (`EmptyDocumentError`, pypdf errors) goes into `errors` with `str(e)` or `"No extractable text"`.
@@ -357,6 +359,17 @@ async def test_corrupt_pdf_reported_others_ingested(client, make_pdf):   # Revie
     assert r.status_code == 200
     assert [e["filename"] for e in body["errors"]] == ["bad.pdf"]
     assert [x["filename"] for x in body["results"]] == ["good.pdf"]
+
+async def test_oversized_file_rejected(client, make_pdf, settings):   # Review Focus 1
+    big = b"%PDF-1.4
+" + b"0" * (settings.max_upload_mb * 1024 * 1024)
+    good = make_pdf(["fine"])
+    r = await client.post("/api/documents", files=[
+        ("files", ("big.pdf", big, "application/pdf")),
+        ("files", ("good.pdf", good.read_bytes(), "application/pdf"))])
+    assert r.json()["errors"] == [{"filename": "big.pdf", "detail": "File exceeds 10 MB limit"}]
+    assert [x["filename"] for x in r.json()["results"]] == ["good.pdf"]
+    assert not (Path(settings.upload_dir) / "big.pdf").exists()
 
 async def test_filename_sanitized_and_case_insensitive(client, make_pdf, settings):   # Review Focus 3
     p = make_pdf(["x"])
@@ -531,7 +544,7 @@ The test helpers live in conftest:
   - `scripts/smoke.sh [BASE_URL=http://localhost:8000]` uses `set -euo pipefail`, curl and grep:
     1. `GET /api/health` returns ok.
     2. Upload `sample.pdf` and expect `"chunks"` in the response.
-    3. `head -c 2000000 /dev/urandom > "$tmp/big.pdf"`, upload it, and expect HTTP 200 with `big.pdf` listed under `errors`.
+    3. `head -c 2000000 /dev/urandom > "$tmp/corrupt.pdf"`, upload it, and expect HTTP 200 with `corrupt.pdf` listed under `errors` (2 MB passes the size limit but isn't a valid PDF). Then `head -c 11000000 /dev/urandom > "$tmp/big.pdf"`, upload it, and expect HTTP 200 with `File exceeds 10 MB limit`.
     4. `POST /api/chats`, then capture the id.
     5. `curl -N` the messages endpoint with "What is the Zebra Protocol?" and expect `event: sources`, `event: token` and `event: done`.
     6. `GET /api/chats` contains the id.
@@ -710,7 +723,7 @@ Run: `npm run build && npm run lint && npm test`. Then, with the Task 8 compose 
 - Consumes: `uploadDocument`, `listDocuments`, `createChat` (Task 9); `Composer` (Task 11); `chatStore.addChat`.
 - Produces: `useDocumentStore` with `{documents: DocumentInfo[]; loaded: boolean; loadDocuments()}`.
 - Components:
-  - **`UploadPanel`:** react-dropzone, PDFs only. Each dropped file gets a row with the status `uploading` → `indexed (N chunks)` or `error: detail`. Each file is uploaded in its own request. It calls `loadDocuments()` after every response.
+  - **`UploadPanel`:** react-dropzone, PDFs only, `maxSize: 10 * 1024 * 1024` (oversized files show "File exceeds 10 MB limit" without uploading). Each dropped file gets a row with the status `uploading` → `indexed (N chunks)` or `error: detail`. Each file is uploaded in its own request. It calls `loadDocuments()` after every response.
   - **`DocumentList`:** filename plus chunk count, with an empty state.
 - `HomePage`:
   - Shows a hero/empty state, `UploadPanel`, `DocumentList` and a `Composer`. The composer is disabled with the hint "Upload a PDF to start" while `documents.length === 0`.
@@ -722,6 +735,7 @@ Run: `npm run build && npm run lint && npm test`. Then, with the Task 8 compose 
 
 Run: `npm run build && npm run lint && npm test`. Then, with `npm run dev` against the compose backend:
 - With no documents, the composer is disabled.
+- Dropping a PDF over 10 MB shows the size error immediately.
 - Drop two PDFs and one `.txt`: the `.txt` is rejected by the dropzone, and the PDFs show per-file progress, then "indexed".
 - Ask from home: you land on the chat page and the answer streams.
 - The paperclip modal uploads from inside a chat.
@@ -757,7 +771,7 @@ Run:
 - `docker compose ps`
 
 Expected:
-- `SMOKE OK`. This includes the 2 MB upload returning 200, not 413 (Review Focus 1), and SSE events arriving through nginx.
+- `SMOKE OK`. This includes the 2 MB and 11 MB uploads returning 200 with per-file errors, not 413 (Review Focus 1), and SSE events arriving through nginx.
 - Only `frontend` publishes a port (`0.0.0.0:8080->80`).
 
 Then open `http://localhost:8080`, run the Task 11 and 12 checklists once more, and confirm that answers stream token by token rather than arriving in one block, which would mean buffering.
