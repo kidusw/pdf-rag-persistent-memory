@@ -1,0 +1,70 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.20.0
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    env_file: .env
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      MONGO_URI: mongodb://mongo:27017
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # Temporary: published for the Phase 5 smoke test; removed once nginx fronts the API.
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+  backend-tests:
+    profiles: ["test"]
+    build:
+      context: ./backend
+      target: test
+    environment:
+      OPENAI_API_KEY: unused-in-tests
+      MONGO_URI: mongodb://mongo:27017
+    command: ["uv", "run", "--no-sync", "pytest", "-m", "integration", "-v"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  qdrant_data:
+  mongo_data:
+  uploads:

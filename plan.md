@@ -22,7 +22,7 @@
 | 2. Chat storage | 2, 3 | ✅ |
 | 3. Ingestion into Qdrant | 4, 5 | ✅ |
 | 4. RAG chain and streaming | 6, 7 | ✅ |
-| 5. Compose (backend services) and old-backend removal | 8 | ⬜ |
+| 5. Compose (backend services) and old-backend removal | 8 | ✅ |
 | 6. Frontend cleanup and API layer | 9, 10 | ⬜ |
 | 7. Frontend features and refresh | 11, 12 | ⬜ |
 | 8. Frontend container, full stack | 13 | ⬜ |
@@ -524,9 +524,9 @@ The test helpers live in conftest:
 
   `close_services` closes the Mongo and Qdrant clients.
 
-- [ ] **Step 1: Implement `build_services` / `close_services`.** Run: `uv run pytest -v`. Expected: still PASS (the tests inject services).
+- [x] **Step 1: Implement `build_services` / `close_services`.** Run: `uv run pytest -v`. Expected: still PASS (the tests inject services).
 
-- [ ] **Step 2: Write `docker-compose.yml`**
+- [x] **Step 2: Write `docker-compose.yml`**
   - **`qdrant`:** `qdrant/qdrant:<pinned tag>`, volume `qdrant_data:/qdrant/storage`, healthcheck `bash -c ':> /dev/tcp/127.0.0.1/6333'`.
   - **`mongo`:** `mongo:7`, volume `mongo_data:/data/db`, healthcheck `mongosh --quiet --eval "db.adminCommand('ping')"`.
   - **`backend`:**
@@ -539,7 +539,7 @@ The test helpers live in conftest:
 
   `.env.example` contains `OPENAI_API_KEY=` and the optional overrides from spec §4.1, commented out.
 
-- [ ] **Step 3: Write the fixture and the smoke script**
+- [x] **Step 3: Write the fixture and the smoke script**
   - `scripts/make_fixture.py` (run once with `uv run --with reportlab python scripts/make_fixture.py`) writes `scripts/fixtures/sample.pdf`, a 2-page PDF about a fictional "Zebra Protocol". Commit the PDF.
   - `scripts/smoke.sh [BASE_URL=http://localhost:8000]` uses `set -euo pipefail`, curl and grep:
     1. `GET /api/health` returns ok.
@@ -551,7 +551,7 @@ The test helpers live in conftest:
     7. `DELETE` returns 204.
     8. Print `SMOKE OK`.
 
-- [ ] **Step 4: Bring the stack up and verify**
+- [x] **Step 4: Bring the stack up and verify**
 
 Run:
 - `docker compose up -d --build qdrant mongo backend`
@@ -560,9 +560,9 @@ Run:
 
 Expected: the integration tests pass (the Mongo contract tests from Task 2), and `SMOKE OK` prints. This needs a real `OPENAI_API_KEY` in `.env`.
 
-- [ ] **Step 5: Delete the old root Python files** listed above and update `.gitignore`. Run: `git status`. Expected: only the listed deletions, with no new backend breakage (`cd backend && uv run pytest`).
+- [x] **Step 5: Delete the old root Python files** listed above and update `.gitignore`. Run: `git status`. Expected: only the listed deletions, with no new backend breakage (`cd backend && uv run pytest`).
 
-- [ ] **Step 6: Commit**: `git commit -m "Wire real services, add compose and smoke test, remove old backend"`. Then update Progress and stop for review.
+- [x] **Step 6: Commit**: `git commit -m "Wire real services, add compose and smoke test, remove old backend"`. Then update Progress and stop for review.
 
 ---
 

@@ -25,7 +25,14 @@ def ensure_collection(client: QdrantClient, name: str, dim: int) -> None:
 
 
 def make_vector_store(client: QdrantClient, name: str, embeddings: Embeddings) -> QdrantVectorStore:
-    return QdrantVectorStore(client=client, collection_name=name, embedding=embeddings)
+    # ensure_collection already checked the vector size; skip langchain's own check,
+    # which embeds a probe string and so needs network access at startup.
+    return QdrantVectorStore(
+        client=client,
+        collection_name=name,
+        embedding=embeddings,
+        validate_collection_config=False,
+    )
 
 
 def collection_is_empty(client: QdrantClient, name: str) -> bool:

@@ -1,19 +1,21 @@
-# Python-generated files
+# Python
 __pycache__/
 *.py[oc]
-build/
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
 dist/
-wheels/
-*.egg-info
 
-./chroma_persist
-./uploaded_pdfs
-*.db
-# Virtual environments
-.venv
-
-
+# Local config and data
 .env
-**/chroma_presist/
-**/api
-/uploaded_pdfs/
+data/
+
+# Legacy local data from the pre-Docker app
+uploaded_pdfs/
+chroma_persist/
+chroma_db/
+*.db
