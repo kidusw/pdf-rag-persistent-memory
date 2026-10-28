@@ -23,7 +23,7 @@
 | 3. Ingestion into Qdrant | 4, 5 | ✅ |
 | 4. RAG chain and streaming | 6, 7 | ✅ |
 | 5. Compose (backend services) and old-backend removal | 8 | ✅ |
-| 6. Frontend cleanup and API layer | 9, 10 | ⬜ |
+| 6. Frontend cleanup and API layer | 9, 10 | ✅ |
 | 7. Frontend features and refresh | 11, 12 | ⬜ |
 | 8. Frontend container, full stack | 13 | ⬜ |
 | 9. Docs | 14 | ⬜ |
@@ -598,16 +598,16 @@ Expected: the integration tests pass (the Mongo contract tests from Task 2), and
   All of these use relative `/api/...` and throw `ApiError` with the backend's `detail` on non-2xx responses.
 - Produces, in `stores/chatStore.ts`: `useChatStore` with `{chats: ChatSummary[]; loadChats(); addChat(c: ChatSummary); removeChat(id); touchChat(id, title?: string)}`. `touchChat` moves the chat to the top, sets `updated_at` to now, and sets the title if it was empty.
 
-- [ ] **Step 1: Delete the files listed above.**
-- [ ] **Step 2: Update dependencies.** Run, in `frontend/`:
+- [x] **Step 1: Delete the files listed above.**
+- [x] **Step 2: Update dependencies.** Run, in `frontend/`:
   - `npm uninstall recharts`
   - `npm install react@latest react-dom@latest react-router-dom@latest zustand@latest react-markdown@latest remark-gfm@latest lucide-react@latest react-dropzone@latest tailwindcss@latest @tailwindcss/vite@latest`
   - `npm install -D vitest @testing-library/react jsdom @tailwindcss/typography`
   - Add the `"test": "vitest run"` script.
-- [ ] **Step 3: Set up Vite.** In `vite.config.ts`, set `server.proxy = {"/api": "http://localhost:8000"}` and `test: {environment: "jsdom"}`.
-- [ ] **Step 4: Write `types.ts`, `client.ts` and the store.** Point `App.tsx` routes at `HomePage` (a placeholder) and `/chat/:id` (a placeholder that renders the id).
-- [ ] **Step 5: Verify.** Run: `npm run build && npm run lint`, then `grep -r "localhost" frontend/src`. Expected: the build and lint pass, and grep finds nothing.
-- [ ] **Step 6: Commit**: `git commit -m "Consolidate frontend, add typed API client and dev proxy"`.
+- [x] **Step 3: Set up Vite.** In `vite.config.ts`, set `server.proxy = {"/api": "http://localhost:8000"}` and `test: {environment: "jsdom"}`.
+- [x] **Step 4: Write `types.ts`, `client.ts` and the store.** Point `App.tsx` routes at `HomePage` (a placeholder) and `/chat/:id` (a placeholder that renders the id).
+- [x] **Step 5: Verify.** Run: `npm run build && npm run lint`, then `grep -r "localhost" frontend/src`. Expected: the build and lint pass, and grep finds nothing.
+- [x] **Step 6: Commit**: `git commit -m "Consolidate frontend, add typed API client and dev proxy"`.
 
 ### Task 10: SSE parser and `streamMessage`
 
@@ -622,7 +622,7 @@ Expected: the integration tests pass (the Mongo contract tests from Task 2), and
   - `type StreamEvent = {type:"sources"; sources: Source[]} | {type:"token"; text: string} | {type:"done"; messageId: string} | {type:"error"; detail: string}`
   - `streamMessage(chatId: string, content: string, signal: AbortSignal): AsyncGenerator<StreamEvent>`: `fetch` POST JSON, throws `ApiError` on non-2xx, then maps `parseSSE` events to `StreamEvent`.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 const streamOf = (...chunks: string[]) => new ReadableStream({ start(c) { chunks.forEach(s => c.enqueue(new TextEncoder().encode(s))); c.close(); } });
@@ -644,10 +644,10 @@ test("streamMessage maps error event and throws ApiError on 409", async () => {
 });
 ```
 
-- [ ] **Step 2: Run, verify FAIL.** Run: `npm test`.
-- [ ] **Step 3: Implement `sse.ts`.**
-- [ ] **Step 4: Run, verify PASS.** Run: `npm test && npm run build`.
-- [ ] **Step 5: Commit**: `git commit -m "Add SSE parser and streamMessage"`. Then update Progress and stop for review.
+- [x] **Step 2: Run, verify FAIL.** Run: `npm test`.
+- [x] **Step 3: Implement `sse.ts`.**
+- [x] **Step 4: Run, verify PASS.** Run: `npm test && npm run build`.
+- [x] **Step 5: Commit**: `git commit -m "Add SSE parser and streamMessage"`. Then update Progress and stop for review.
 
 ---
 
