@@ -46,9 +46,15 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-    # Temporary: published for the Phase 5 smoke test; removed once nginx fronts the API.
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   backend-tests:
