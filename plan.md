@@ -19,7 +19,7 @@
 |---|---|---|
 | 0. Setup: branch, spec, plan | — | ✅ |
 | 1. Backend skeleton | 1 | ✅ |
-| 2. Chat storage | 2, 3 | ⬜ |
+| 2. Chat storage | 2, 3 | ✅ |
 | 3. Ingestion into Qdrant | 4, 5 | ⬜ |
 | 4. RAG chain and streaming | 6, 7 | ⬜ |
 | 5. Compose (backend services) and old-backend removal | 8 | ⬜ |
@@ -167,7 +167,7 @@ Run: `docker build --target runtime -t pdf-rag-backend backend`. Expected: the b
 
 `append_messages` sets the title to `title_if_empty[:60]` only when the current title is `""`, appends with `$push`/`$each` (atomic), sets `updated_at`, and returns `False` if the chat is missing.
 
-- [ ] **Step 1: Write failing contract tests** in `test_chat_repo.py`, parametrized over a `repo` fixture (in-memory):
+- [x] **Step 1: Write failing contract tests** in `test_chat_repo.py`, parametrized over a `repo` fixture (in-memory):
 
 ```python
 async def test_create_then_get(repo):
@@ -197,10 +197,10 @@ async def test_delete_and_missing(repo):
 
 In `test_mongo_repo.py`, mark the module `pytestmark = pytest.mark.integration`. It reuses the same four tests (import and re-parametrize) against `MongoChatRepository` on a throwaway DB named `pdf_rag_test_<uuid>`, which is dropped afterwards. `MONGO_URI` comes from the environment.
 
-- [ ] **Step 2: Run the tests to verify they fail.** Run: `uv run pytest tests/test_chat_repo.py -v`. Expected: ImportError.
-- [ ] **Step 3: Implement `models.py` and `chats.py`.**
-- [ ] **Step 4: Run the tests to verify they pass.** Run: `uv run pytest -v`. Expected: PASS. The Mongo tests are deselected for now and run in Task 8.
-- [ ] **Step 5: Commit**: `git commit -m "Add chat models and repositories"`.
+- [x] **Step 2: Run the tests to verify they fail.** Run: `uv run pytest tests/test_chat_repo.py -v`. Expected: ImportError.
+- [x] **Step 3: Implement `models.py` and `chats.py`.**
+- [x] **Step 4: Run the tests to verify they pass.** Run: `uv run pytest -v`. Expected: PASS. The Mongo tests are deselected for now and run in Task 8.
+- [x] **Step 5: Commit**: `git commit -m "Add chat models and repositories"`.
 
 ### Task 3: Chat endpoints
 
@@ -218,7 +218,7 @@ In `test_mongo_repo.py`, mark the module `pytestmark = pytest.mark.integration`.
   - `DELETE /api/chats/{chat_id}` → 204 / 404
 - Produces the conftest fixture `services` (`Services` with `InMemoryChatRepository()`; the other fields are set in Tasks 4 and 6) and `client` (an httpx `AsyncClient` over `create_app(settings, services)`).
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```python
 async def test_create_list_get_delete(client):
@@ -237,10 +237,10 @@ async def test_list_omits_messages(client):
     assert set((await client.get("/api/chats")).json()[0]) == {"id", "title", "updated_at"}
 ```
 
-- [ ] **Step 2: Run, verify FAIL.** Run: `uv run pytest tests/test_api_chats.py -v`.
-- [ ] **Step 3: Implement `api/chats.py`** and register it in `create_app`.
-- [ ] **Step 4: Run, verify PASS.** Run: `uv run pytest -v && uv run ruff check .`.
-- [ ] **Step 5: Commit**: `git commit -m "Add chat CRUD endpoints"`. Then update Progress and stop for review.
+- [x] **Step 2: Run, verify FAIL.** Run: `uv run pytest tests/test_api_chats.py -v`.
+- [x] **Step 3: Implement `api/chats.py`** and register it in `create_app`.
+- [x] **Step 4: Run, verify PASS.** Run: `uv run pytest -v && uv run ruff check .`.
+- [x] **Step 5: Commit**: `git commit -m "Add chat CRUD endpoints"`. Then update Progress and stop for review.
 
 ---
 

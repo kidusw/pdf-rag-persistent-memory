@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api import health
+from app.api import chats, health
 from app.config import Settings, get_settings
 from app.services import Services, build_services, close_services
 
@@ -27,4 +27,5 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         app.state.services = services
 
     app.include_router(health.router, prefix="/api")
+    app.include_router(chats.router, prefix="/api")
     return app
