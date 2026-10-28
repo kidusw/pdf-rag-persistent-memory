@@ -18,7 +18,7 @@
 | Phase | Tasks | Status |
 |---|---|---|
 | 0. Setup: branch, spec, plan | — | ✅ |
-| 1. Backend skeleton | 1 | ⬜ |
+| 1. Backend skeleton | 1 | ✅ |
 | 2. Chat storage | 2, 3 | ⬜ |
 | 3. Ingestion into Qdrant | 4, 5 | ⬜ |
 | 4. RAG chain and streaming | 6, 7 | ⬜ |
@@ -74,7 +74,7 @@
   - In `app/deps.py`: `get_services(request) -> Services`, `get_app_settings(request) -> Settings` (from `app.state.settings`).
   - Run command: `uvicorn app.main:create_app --factory`.
 
-- [ ] **Step 1: Initialize the uv project**
+- [x] **Step 1: Initialize the uv project**
 
 Run, in `backend/`:
 - `uv init --app --python 3.12 --name pdf-rag-backend`
@@ -88,7 +88,7 @@ Then delete the generated `main.py`/`hello.py`. In `pyproject.toml`, set `[tool.
 
 Expected: `uv.lock` exists.
 
-- [ ] **Step 2: Write failing tests**
+- [x] **Step 2: Write failing tests**
 
 ```python
 # tests/conftest.py
@@ -114,19 +114,19 @@ def test_defaults():
     assert (s.openai_model, s.embedding_model, s.retrieval_k, s.history_window) == ("gpt-4o-mini", "text-embedding-3-small", 4, 10)
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `cd backend && uv run pytest -v`. Expected: ImportError / FAIL.
 
-- [ ] **Step 4: Implement `config.py`, `services.py`, `deps.py`, `api/health.py` and `main.py`**
+- [x] **Step 4: Implement `config.py`, `services.py`, `deps.py`, `api/health.py` and `main.py`**
 
 `create_app` stores `settings` on `app.state.settings` and includes the health router under `/api`. No CORS middleware.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `uv run pytest -v && uv run ruff check .`. Expected: all pass, no lint errors.
 
-- [ ] **Step 6: Dockerfile with `runtime` and `test` targets**
+- [x] **Step 6: Dockerfile with `runtime` and `test` targets**
 
 - **`runtime`:**
   - Based on `python:3.12-slim`, with `COPY --from=ghcr.io/astral-sh/uv:<pinned tag> /uv /bin/uv`.
@@ -136,7 +136,7 @@ Run: `uv run pytest -v && uv run ruff check .`. Expected: all pass, no lint erro
 
 Run: `docker build --target runtime -t pdf-rag-backend backend`. Expected: the build succeeds.
 
-- [ ] **Step 7: Commit**: `git add backend && git commit -m "Add backend skeleton: settings, app factory, health"`. Then update Progress and stop for review.
+- [x] **Step 7: Commit**: `git add backend && git commit -m "Add backend skeleton: settings, app factory, health"`. Then update Progress and stop for review.
 
 ---
 
